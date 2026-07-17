@@ -77,21 +77,26 @@ export default  function Main() {
   }, [supabase]);
 
   useEffect(() => {
-     if (!user) return;
+  if (!user) return;
 
-    const newKhatmaStarts = async () => {
+  const newKhatmaStarts = async () => {
+    const { data } = await supabase
+      .from("khatmas")
+      .select("*")
+      .eq("user_id", user.id)
+      .is("started_at", null) 
+      .maybeSingle();         
 
-      if (khatmaCount === 0) {
-        await supabase.from("khatmas").insert({
-          user_id: user?.id,
-          started_at: new Date().toISOString()
-        });
-      }
+    if (khatmaCount === 0 && !data) {
+      await supabase.from("khatmas").insert({
+        user_id: user.id,
+        started_at: new Date().toISOString()
+      });
     }
+  };
 
-    newKhatmaStarts();
-  }, [user, khatmaCount]);
-
+  newKhatmaStarts();
+}, [user, khatmaCount]);
   // Load saved progress once we actually have a user. maybeSingle()
   // (not single()) so a brand-new user with no row yet doesn't throw.
   useEffect(() => {
