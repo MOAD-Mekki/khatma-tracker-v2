@@ -235,10 +235,7 @@ export default  function Main() {
     setAjzaa(initialAjzaa);
     setShowCongrats(false);
 
-    await supabase.from('khatmas').insert({
-      user_id: user?.id,
-      started_at: new Date().toISOString()
-    });
+
   }
 
   const list = viewMode === "hizb" ? ahzab : ajzaa;
