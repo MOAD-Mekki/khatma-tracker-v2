@@ -80,14 +80,16 @@ export default  function Main() {
   if (!user) return;
 
   const newKhatmaStarts = async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("khatmas")
       .select("*")
       .eq("user_id", user.id)
-      .is("started_at", null) 
-      .maybeSingle();         
+      .order("started_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(); // returns null if no row
 
-    if (khatmaCount === 0 && !data) {
+    // Only insert if no row exists OR the latest row is finished
+    if (khatmaCount === 0 && (!data || data.finished_at !== null)) {
       await supabase.from("khatmas").insert({
         user_id: user.id,
         started_at: new Date().toISOString()
@@ -97,6 +99,7 @@ export default  function Main() {
 
   newKhatmaStarts();
 }, [user, khatmaCount]);
+
   // Load saved progress once we actually have a user. maybeSingle()
   // (not single()) so a brand-new user with no row yet doesn't throw.
   useEffect(() => {
