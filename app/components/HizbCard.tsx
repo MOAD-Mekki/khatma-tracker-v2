@@ -9,8 +9,10 @@ interface CardProps {
 
 export default function Card({ id, title, completed, onClick } : CardProps) {
   return (
-    <div
+    <button
+      type="button"
       onClick={onClick}
+      aria-pressed={completed}
       className={`
         cursor-pointer rounded-2xl p-4 transition-all duration-200
         flex flex-col items-center text-center gap-1
@@ -47,6 +49,6 @@ export default function Card({ id, title, completed, onClick } : CardProps) {
 
       {/* // Hizb or Juz name  */}
       <p className="font-arabic text-base font-bold leading-snug">{title}</p>
-    </div>
+    </button>
   );
 }

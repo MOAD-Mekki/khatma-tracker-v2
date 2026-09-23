@@ -31,7 +31,7 @@ export default function Navbar() {
     function getHijriDate(lang : "ar" | "en") {
       try {
         return new Intl.DateTimeFormat(
-          lang === "ar" ? "ar-SA-u-ca-islamic" : "en-SA-u-ca-islamic",
+          lang === "ar" ? "ar-SA-u-ca-islamic" : "en-u-ca-islamic",
           { day: "numeric", month: "long", year: "numeric" }
         ).format(new Date());
       } catch {
@@ -59,7 +59,7 @@ export default function Navbar() {
     setmiladiDate(getMiladiDate());
     setTime(getTime());
     return () => clearInterval(interval);
-  }, []);
+  }, [lang]);
 
   return (
     <nav
