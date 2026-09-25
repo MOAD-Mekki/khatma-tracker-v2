@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Card from "./../../components/HizbCard";
 import CongratsCard from "./../../components/CongratsCard";
 import Footer from "./../../components/Footer";
@@ -28,27 +29,35 @@ import Link from "next/link";
 };
 
 export default  function Main() {
-  // Keep ONE stable client for the component's lifetime instead of
-  // creating a brand-new one on every render — that instability was
-  // making the effects below re-fire more than intended.
+
   const [supabase] = useState(() => createClient());
 
   const [user, setUser] = useState<User | null>(null);
   const [progressLoaded, setProgressLoaded] = useState(false);
   const [ahzab, setAhzab] = useState<Hizb[]>(initialAhzab);
-  const [ajzaa, setAjzaa] = useState<Hizb[]>(initialAjzaa);
   const [khatmaCount, setKhatmaCount] = useState(0);
   const [showResetModal, setShowResetModal] = useState(false);
   const [viewMode, setViewMode] = useState<"hizb" | "juz">("hizb");
   const [showCongrats, setShowCongrats] = useState(false);
   const [hadith, setHadith] = useState<string>("");
+  const router = useRouter();
   const { lang } = useLang();
   const isAr = lang === "ar";
 
-  // Get the current user, or silently create an anonymous one if this
-  // is a brand-new visitor. Without this fallback, `user` stays null
-  // forever for anyone who hasn't manually signed up, and every DB
-  // call below ends up sending "undefined" as the user id.
+  function deriveAjzaa(ahzab: Hizb[]): Hizb[] {
+    return initialAjzaa.map((juz) => {
+      const firstHizbId = juz.id * 2 - 1;
+      const secondHizbId = juz.id * 2;
+      const firstHizb = ahzab.find((h) => h.id === firstHizbId);
+      const secondHizb = ahzab.find((h) => h.id === secondHizbId);
+
+      return {
+        ...juz,
+        completed: !!firstHizb?.completed && !!secondHizb?.completed,
+      };
+    });
+  }
+
   useEffect(() => {
     const initAuth = async () => {
       const { data: { user: existingUser } } = await supabase.auth.getUser();
@@ -62,14 +71,13 @@ export default  function Main() {
 
     initAuth();
 
-    // keep `user` in sync with ANY later change to the session — signing
-    // in as a real user, signing out, an anonymous account getting
-    // upgraded, or a token refresh. This is what was missing: without
-    // it, `user` goes stale the moment the session changes and every
-    // DB call after that uses the wrong id.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         setUser(session?.user ?? null);
+
+         if (!session?.user) {
+          router.push("/");
+        }
       }
     );
 
@@ -77,28 +85,38 @@ export default  function Main() {
   }, [supabase]);
 
   useEffect(() => {
-  if (!user) return;
+   if (!user || !progressLoaded) return;
 
-  const newKhatmaStarts = async () => {
-    const { data, error } = await supabase
-      .from("khatmas")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("started_at", { ascending: false })
-      .limit(1)
-      .maybeSingle(); // returns null if no row
+   const ensureOpenKhatma = async () => {
+     const { data, error: selectError } = await supabase
+       .from("khatmas")
+       .select("*")
+       .eq("user_id", user.id)
+       .order("started_at", { ascending: false })
+       .limit(1)
+       .maybeSingle();
 
-    // Only insert if no row exists OR the latest row is finished
-    if (khatmaCount === 0 && (!data || data.finished_at !== null)) {
-      await supabase.from("khatmas").insert({
-        user_id: user.id,
-        started_at: new Date().toISOString()
-      });
-    }
-  };
+     if (selectError) {
+       console.error("Failed to check for an open khatma:", selectError.message);
+       return;
+     }
 
-  newKhatmaStarts();
-}, [user, khatmaCount]);
+     const noOpenKhatma = !data || data.finished_at !== null;
+
+     if (noOpenKhatma) {
+       const { error: insertError } = await supabase.from("khatmas").insert({
+         user_id: user.id,
+         started_at: new Date().toISOString(),
+       });
+
+       if (insertError) {
+         console.error("Failed to open a new khatma:", insertError.message);
+       }
+     }
+   };
+
+   ensureOpenKhatma();
+  } , [user, progressLoaded, supabase]);
 
   // Load saved progress once we actually have a user. maybeSingle()
   // (not single()) so a brand-new user with no row yet doesn't throw.
@@ -121,12 +139,6 @@ export default  function Main() {
             completed: (progress.ahzab || []).includes(h.id),
           })),
         );
-        setAjzaa(
-          initialAjzaa.map((j) => ({
-            ...j,
-            completed: (progress.ajzaa || []).includes(j.id),
-          })),
-        );
         setKhatmaCount(progress.khatma_count || 0);
       }
       // progress === null just means this user has no saved row yet —
@@ -138,16 +150,12 @@ export default  function Main() {
     loadProgress();
   }, [user, supabase]);
 
-  // Debounced autosave — the single place that writes progress to the
-  // DB. Waits for progressLoaded so it can never fire before the load
-  // above finishes (which would silently overwrite a returning user's
-  // real saved progress with the blank initial state).
   useEffect(() => {
     if (!user || !progressLoaded) return;
 
     const saveProgress = async () => {
       const completedAhzab = ahzab.filter((h) => h.completed).map((h) => h.id);
-      const completedAjzaa = ajzaa.filter((j) => j.completed).map((j) => j.id);
+      const completedAjzaa = deriveAjzaa(ahzab).filter((j) => j.completed).map((j) => j.id);
 
       const { error } = await supabase.from("khatma_progress").upsert(
         {
@@ -160,95 +168,115 @@ export default  function Main() {
         { onConflict: "user_id" },
       );
 
-      if (error) console.error("saving error:", error.message);
+      if (error) console.log("saving error:", error.message);
     };
 
     const timeout = setTimeout(saveProgress, 500); // debounce fast toggles
     return () => clearTimeout(timeout);
-  }, [ahzab, ajzaa, khatmaCount, user, progressLoaded, supabase]);
+  }, [ahzab, khatmaCount, user, progressLoaded, supabase]);
 
   // toggle between hizb and juz rendering
   async function toggleItem(id: number, type: "hizb" | "juz") {
+  if (!user) return;
+
+  let updatedAhzab: Hizb[];
+
   if (type === "hizb") {
-    const updated = ahzab.map(h =>
+    updatedAhzab = ahzab.map((h) =>
       h.id === id ? { ...h, completed: !h.completed } : h
     );
-    setAhzab(updated);
-
-    if (updated.every(h => h.completed)) {
-      setKhatmaCount(c => c + 1);
-      setShowCongrats(true);
-
-      await supabase.from("khatmas")
-        .update({ finished_at: new Date().toISOString() })
-        .eq("user_id", user?.id)
-        .is("finished_at", null);
-
-      // Immediately start a new khatma row
-      await supabase.from("khatmas").insert({
-        user_id: user?.id,
-        started_at: new Date().toISOString()
-      });
-    }
   } else {
-    const updated = ajzaa.map(j =>
-      j.id === id ? { ...j, completed: !j.completed } : j
+    const firstHizbId = id * 2 - 1;
+    const secondHizbId = id * 2;
+
+    const bothComplete =
+      ahzab.find((h) => h.id === firstHizbId)?.completed &&
+      ahzab.find((h) => h.id === secondHizbId)?.completed;
+
+    const newValue = !bothComplete;
+
+    updatedAhzab = ahzab.map((h) =>
+      h.id === firstHizbId || h.id === secondHizbId
+        ? { ...h, completed: newValue }
+        : h
     );
-    setAjzaa(updated);
+  }
 
-    if (updated.every(j => j.completed)) {
-      setKhatmaCount(c => c + 1);
-      setShowCongrats(true);
+  setAhzab(updatedAhzab);
 
-      await supabase.from("khatmas")
-        .update({ finished_at: new Date().toISOString() })
-        .eq("user_id", user?.id)
-        .is("finished_at", null);
+  if (updatedAhzab.every((h) => h.completed)) {
+    setKhatmaCount((c) => c + 1);
+    setShowCongrats(true);
 
-      await supabase.from("khatmas").insert({
-        user_id: user?.id,
-        started_at: new Date().toISOString()
-      });
+    const { error: closeError } = await supabase
+      .from("khatmas")
+      .update({ finished_at: new Date().toISOString() })
+      .eq("user_id", user.id)
+      .is("finished_at", null);
+
+    if (closeError) {
+      console.error("Failed to close finished khatma:", closeError.message);
+    }
+
+    const { error: insertError } = await supabase.from("khatmas").insert({
+      user_id: user.id,
+      started_at: new Date().toISOString(),
+    });
+
+    if (insertError) {
+      console.error("Failed to start new khatma:", insertError.message);
     }
   }
 }
 
-  // Reset khatma counter — just updates state; the autosave effect
-  // above persists it (and creates the row if one doesn't exist yet,
-  // which the old direct .update() call would have silently skipped).
+  // Reset khatma counter
   async function handleReset() {
+    if (!user) return;
+
     setAhzab(initialAhzab);
-    setAjzaa(initialAjzaa);
     setKhatmaCount(0);
     setShowResetModal(false);
 
+    await supabase.from("khatmas").update({
+      finished_at: new Date().toISOString()
+    })
+    .eq('user_id', user.id)
+    .is('finished_at', null)
+
     await supabase.from("khatmas").insert({
-      user_id: user?.id,
+      user_id: user.id,
       started_at: new Date().toISOString()
   });
   }
 
-  // New khatma handler after the congrats card — same idea, no direct
-  // DB call needed here anymore.
+  // New khatma handler
   async function handleNewKhatma() {
     setAhzab(initialAhzab);
-    setAjzaa(initialAjzaa);
     setShowCongrats(false);
-
-
   }
 
-  const list = viewMode === "hizb" ? ahzab : ajzaa;
+  const list = viewMode === "hizb" ? ahzab : deriveAjzaa(ahzab);
 
   // translation object
   const t = translations[lang];
 
   // handling ahadith rendering
   useEffect(() => {
-    const random = Math.floor(Math.random() * 10);
+    const random = Math.floor(Math.random() * ahadith.length);
     setHadith(ahadith[random].content);
   }, []);
 
+  // Loading State handler
+  if (!user || !progressLoaded) {
+    return (
+      <div
+        dir={isAr ? "rtl" : "ltr"}
+        className="font-arabic min-h-screen flex items-center justify-center bg-linear-to-br from-emerald-50 to-teal-100"
+      >
+        <p className="text-teal-700 text-lg animate-pulse">{t.loading}</p>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -279,7 +307,7 @@ export default  function Main() {
             {t.khatmaCount}
           </p>
           <Link href={'/pages/khatmas-history'}>
-            <button className="mt-1 bg-teal-300 hover:bg-teal-400 text-white font-arabic font-medium py-2 px-4 rounded-full text-sm transition-all hover:scale-105 cursor-pointer">
+            <button className="mt-1  hover:text-teal-300 text-teal-200 font-arabic font-semibold py-2 px-4  text-sm transition-all hover:scale-105 cursor-pointer underline">
               {t.khatmashistory}
             </button>
           </Link>

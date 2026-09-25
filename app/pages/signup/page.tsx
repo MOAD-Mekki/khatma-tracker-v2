@@ -2,7 +2,7 @@
 
 import { useLang } from "@/app/context/LanguageContext";
 import { useRouter } from "next/navigation";
-import { use, useState } from "react";
+import { useState } from "react";
 import { createClient } from "@/app/utils/supabase/client";
 
 const signUpTranslation = {

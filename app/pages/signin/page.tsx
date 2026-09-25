@@ -19,7 +19,7 @@ const signInTranslation = {
         emailLabel: 'Email',
         emailPlaceHolder: 'example@gmail.com',
         passwordLabel: 'Password',
-        passwordPlaceHolder: 'password should  at least contains 6 charachters',
+        passwordPlaceHolder: 'psword should  at least contains 6 charachters',
         submitButton: 'Sign In',
     }
 }
@@ -35,28 +35,30 @@ function SignIn() {
     const isAr = lang === "ar";
 
     async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-            event.preventDefault();
+        event.preventDefault();
 
-            if (email.trim() === '' || password.trim() === '') {
-                setEroor('* Please fill out all the fields');
+        if (email.trim() === '' || password.trim() === '') {
+            setEroor('* Please fill out all the fields');
+        } else {
+            const {error} = await supabase.auth.signInWithPassword({
+                email,
+                password
+            });
+            if (error) {
+                setEroor(error.message);
+            } else if(password.length < 6) {
+                setEroor(t.passwordPlaceHolder);
             } else {
-                const {error} = await supabase.auth.signInWithPassword({
-                    email,
-                    password
-                });
-
-                if (error) {
-                    setEroor('* DB Error');
-                } else {
-                    console.log('signed up successfully');
-                    
-                    setEmail('');
-                    setPassword('');
-                    setEroor(null);
-                    router.push('/pages/main');
-                }
+                console.log('signed up successfully');
+                
+                setEmail('');
+                setPassword('');
+                setEroor(null);
+                router.push('/pages/main');
             }
-        }
+        }       
+    }
+    
 
     return ( 
         <div 
@@ -65,7 +67,7 @@ function SignIn() {
             <form action="" className="bg-white shadow-lg rounded-lg p-8 w-full max-w-md"  onSubmit={handleSubmit}>
                 <h1 className="text-4xl font-bold text-teal-700 text-center mb-6">{t.title}</h1>
                 <div className="flex flex-col justify-center w-full">
-                    <label htmlFor="" className="font-arabic text-xl text-gray-600 leading-relaxed">{t.emailLabel}</label>
+                    <label className="font-arabic text-xl text-gray-600 leading-relaxed">{t.emailLabel}</label>
                     <input 
                         type="email"
                         placeholder={t.emailPlaceHolder} 
@@ -74,7 +76,7 @@ function SignIn() {
                         className="w-full px-3 py-2  rounded-lg focus:ring-2 focus:ring-green-400 focus:outline-none"/>
                 </div>
                 <div className="mb-6">
-                    <label htmlFor="" className="font-arabic text-xl text-gray-600 leading-relaxed">{t.passwordLabel}</label>
+                    <label className="font-arabic text-xl text-gray-600 leading-relaxed">{t.passwordLabel}</label>
                     <input 
                         type="password"
                         placeholder={t.passwordPlaceHolder}

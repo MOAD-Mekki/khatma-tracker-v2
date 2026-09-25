@@ -1,4 +1,3 @@
-'use state';
 
 import type { Metadata } from "next";
 import Navbar from './components/Nav';
@@ -29,7 +28,6 @@ export default async function RootLayout({
 
   return (
     <html
-      lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">

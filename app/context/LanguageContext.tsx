@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect } from "react";
 import { createClient } from "../utils/supabase/client";
+import { User } from "@supabase/supabase-js";
 
 interface LangProp {
   children: React.ReactNode
@@ -15,22 +16,48 @@ interface Context {
 
 const LanguageContext = createContext<Context | null>(null);
 
-
-export function LanguageProvider({ children } : LangProp) {
-  const supabase = createClient();
+export function LanguageProvider({ children }: LangProp) {
+  const [supabase] = useState(() => createClient());
   const [lang, setLang] = useState<"ar" | "en">("ar");
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    const loadLang = async () => {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      if (!error && user?.user_metadata?.language) {
-        setLang(user.user_metadata.language as "ar" | "en");
+    const applyUser = (u: User | null) => {
+      setUser(u);
+
+      const metadataLang = u?.user_metadata?.language;
+      if (metadataLang === "ar" || metadataLang === "en") {
+        setLang(metadataLang);
       }
     };
-    loadLang();
+
+    supabase.auth.getUser().then(({ data: { user }, error }) => {
+      if (!error) applyUser(user);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        applyUser(session?.user ?? null);
+      }
+    );
+
+    return () => subscription.unsubscribe();
   }, [supabase]);
 
-  const toggle = () => setLang((l) => (l === "ar" ? "en" : "ar"));
+  const toggle = async () => {
+    const newLang = lang === "ar" ? "en" : "ar";
+    setLang(newLang);
+
+    if (!user) return;
+
+    const { error } = await supabase.auth.updateUser({
+      data: { language: newLang },
+    });
+
+    if (error) {
+      console.error("Failed to save language preference:", error.message);
+    }
+  };
 
   return (
     <LanguageContext.Provider value={{ lang, setLang, toggle }}>
@@ -39,8 +66,12 @@ export function LanguageProvider({ children } : LangProp) {
   );
 }
 
-export function useLang() : Context {
-  const context =  useContext<Context | null>(LanguageContext);
+export function useLang(): Context {
+  const context = useContext<Context | null>(LanguageContext);
 
-    return context as Context;
+  if (!context) {
+    throw new Error("useLang must be used within a LanguageProvider");
+  }
+
+  return context;
 }

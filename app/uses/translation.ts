@@ -19,6 +19,7 @@ export const translations = {
     congratsSub: "وجعلها في ميزان حسناتك\nورزقك الثبات على تلاوة كتابه",
     congratsCount: "ختمات مكتملة",
     congratsNew: "ابدأ ختمة جديدة",
+    loading: 'جاري التحميل...'
   },
   en: {
     pageTitle: "Quran Khatma Tracker",
@@ -41,5 +42,6 @@ export const translations = {
       "May He make it a light for you\nand keep you steadfast in His recitation",
     congratsCount: "khatmas completed",
     congratsNew: "Start a new khatma",
+    loading: 'Loading...'
   },
 };
