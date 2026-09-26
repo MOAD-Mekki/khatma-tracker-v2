@@ -1,14 +1,16 @@
 'use client';
 
+import Modal from "./Modal";
+
 interface CardProps {
   khatmaCount: number,
   onNewKhatma: () => void,
   t: Record<string, string>
 }
 
-export default function CongratsCard({ khatmaCount, onNewKhatma, t } : CardProps) {
+export default function CongratsCard({ khatmaCount, onNewKhatma, t }: CardProps) {
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+    <Modal onClose={onNewKhatma}>
       <div
         className="relative overflow-hidden rounded-3xl p-8 max-w-sm w-full text-center flex flex-col items-center gap-4"
         style={{
@@ -63,6 +65,6 @@ export default function CongratsCard({ khatmaCount, onNewKhatma, t } : CardProps
           </button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }

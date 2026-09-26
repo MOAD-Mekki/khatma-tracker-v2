@@ -1,5 +1,7 @@
 'use client';
 
+import Modal from "./Modal";
+
 const GITHUB_URL = "https://github.com/MOAD-Mekki";
 const LINKEDIN_URL = "https://www.linkedin.com/in/mekki-moad";
 const EMAIL = "moadahmedabdesselammekki@gmail.com";
@@ -37,73 +39,75 @@ export default function Contact({ onClose, lang } : ContactProps) {
   const isAr = lang === "ar";
 
   return (
-    <div
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-      
-    >
+    <Modal onClose={onClose}>
       <div
-        dir={isAr ? "rtl" : "ltr"}
-        className="bg-white rounded-3xl p-8 max-w-sm w-full flex flex-col items-center gap-4 shadow-2xl" 
-        >
-        
-        {/* Buttons */}
-        <div className="flex flex-col gap-3 w-full">
+        className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
 
-          {/* GitHub */}
-          <a
-            href={GITHUB_URL}
-            target="_blank"
-            rel="noreferrer"
-            className="flex items-center gap-3 w-full px-4 py-3.5 rounded-2xl bg-gray-50 hover:bg-gray-100 border border-gray-200 transition-all hover:-translate-x-1 group"
+      >
+        <div
+          dir={isAr ? "rtl" : "ltr"}
+          className="bg-white rounded-3xl p-8 max-w-sm w-full flex flex-col items-center gap-4 shadow-2xl" 
           >
-            <div className="w-9 h-9 rounded-xl bg-gray-900 flex items-center justify-center shrink-0">
-              <GitHubIcon />
-            </div>
-            <div className="flex flex-col items-start">
-              <span className="font-arabic text-sm font-bold text-gray-800">GitHub</span>
-              <span className="font-sans text-xs text-gray-400">{GITHUB_URL.replace("https://", "")}</span>
-            </div>
-          </a>
+          
+          {/* Buttons */}
+          <div className="flex flex-col gap-3 w-full">
 
-          {/* LinkedIn */}
-          <a
-            href={LINKEDIN_URL}
-            target="_blank"
-            rel="noreferrer"
-            className="flex items-center gap-3 w-full px-4 py-3.5 rounded-2xl bg-blue-50 hover:bg-blue-100 border border-blue-100 transition-all hover:-translate-x-1"
+            {/* GitHub */}
+            <a
+              href={GITHUB_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-3 w-full px-4 py-3.5 rounded-2xl bg-gray-50 hover:bg-gray-100 border border-gray-200 transition-all hover:-translate-x-1 group"
+            >
+              <div className="w-9 h-9 rounded-xl bg-gray-900 flex items-center justify-center shrink-0">
+                <GitHubIcon />
+              </div>
+              <div className="flex flex-col items-start">
+                <span className="font-arabic text-sm font-bold text-gray-800">GitHub</span>
+                <span className="font-sans text-xs text-gray-400">{GITHUB_URL.replace("https://", "")}</span>
+              </div>
+            </a>
+
+            {/* LinkedIn */}
+            <a
+              href={LINKEDIN_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-3 w-full px-4 py-3.5 rounded-2xl bg-blue-50 hover:bg-blue-100 border border-blue-100 transition-all hover:-translate-x-1"
+            >
+              <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center shrink-0">
+                <LinkedInIcon />
+              </div>
+              <div className="flex flex-col items-start">
+                <span className="font-arabic text-sm font-bold text-blue-700">LinkedIn</span>
+                <span className="font-sans text-xs text-blue-400">{LINKEDIN_URL.replace("https://", "")}</span>
+              </div>
+            </a>
+
+            {/* Email */}
+            <a
+              href={`mailto:${EMAIL}?subject=`}
+              className="flex items-center gap-3 w-full px-4 py-3.5 rounded-2xl bg-amber-50 hover:bg-amber-100 border border-amber-100 transition-all hover:-translate-x-1"
+            >
+              <div className="w-9 h-9 rounded-xl bg-amber-400 flex items-center justify-center shrink-0 text-lg">
+                ✉️
+              </div>
+              <div className="flex flex-col items-start">
+                <span className="font-arabic text-sm font-bold text-amber-700">{t.email}</span>
+                <span className="font-sans text-xs text-amber-400">{EMAIL}</span>
+              </div>
+            </a>
+
+          </div>
+
+          <button
+            onClick={onClose}
+            className="font-arabic text-sm text-gray-400 hover:text-gray-600 hover:bg-gray-100 px-4 py-2 rounded-xl transition-all cursor-pointer"
           >
-            <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center shrink-0">
-              <LinkedInIcon />
-            </div>
-            <div className="flex flex-col items-start">
-              <span className="font-arabic text-sm font-bold text-blue-700">LinkedIn</span>
-              <span className="font-sans text-xs text-blue-400">{LINKEDIN_URL.replace("https://", "")}</span>
-            </div>
-          </a>
-
-          {/* Email */}
-          <a
-            href={`mailto:${EMAIL}?subject=`}
-            className="flex items-center gap-3 w-full px-4 py-3.5 rounded-2xl bg-amber-50 hover:bg-amber-100 border border-amber-100 transition-all hover:-translate-x-1"
-          >
-            <div className="w-9 h-9 rounded-xl bg-amber-400 flex items-center justify-center shrink-0 text-lg">
-              ✉️
-            </div>
-            <div className="flex flex-col items-start">
-              <span className="font-arabic text-sm font-bold text-amber-700">{t.email}</span>
-              <span className="font-sans text-xs text-amber-400">{EMAIL}</span>
-            </div>
-          </a>
-
+            {t.close}
+          </button>
         </div>
-
-        <button
-          onClick={onClose}
-          className="font-arabic text-sm text-gray-400 hover:text-gray-600 hover:bg-gray-100 px-4 py-2 rounded-xl transition-all cursor-pointer"
-        >
-          {t.close}
-        </button>
       </div>
-    </div>
+    </Modal>
   );
 }

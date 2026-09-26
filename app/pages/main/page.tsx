@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Card from "./../../components/HizbCard";
 import CongratsCard from "./../../components/CongratsCard";
+import Modal from "@/app/components/Modal";
 import Footer from "./../../components/Footer";
 import { translations } from "./../../uses/translation";
 import { ahadith } from "./../../uses/ahadith";
@@ -366,7 +367,7 @@ export default  function Main() {
 
       {/* // Reset verefication card */}
       {showResetModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <Modal onClose={() => setShowResetModal(false)}>
           <div className="bg-white rounded-2xl p-8 max-w-sm w-full mx-4 flex flex-col items-center gap-4 shadow-xl text-center">
             <div className="text-4xl">⚠️</div>
             <h2 className="text-xl font-semibold text-gray-800">
@@ -390,7 +391,7 @@ export default  function Main() {
               </button>
             </div>
           </div>
-        </div>
+        </Modal>
       )}
       
       {/* // Congrats Card */}
