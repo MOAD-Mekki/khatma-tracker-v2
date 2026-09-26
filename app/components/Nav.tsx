@@ -15,6 +15,33 @@ const navTranslations = {
   },
 };
 
+function getHijriDate(lang: "ar" | "en") {
+  try {
+    return new Intl.DateTimeFormat(
+      lang === "ar" ? "ar-SA-u-ca-islamic" : "en-SA-u-ca-islamic",
+      { day: "numeric", month: "long", year: "numeric" }
+    ).format(new Date());
+  } catch {
+    return "";
+  }
+}
+
+function getMiladiDate() {
+  return new Date().toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function getTime() {
+  return new Date().toLocaleTimeString("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+}
+
 
 export default function Navbar() {
   
@@ -25,40 +52,21 @@ export default function Navbar() {
   const t = navTranslations[lang];
   const isAr = lang === "ar";
 
+ // Runs once — the Gregorian date and the ticking clock don't depend
+  // on the chosen language, so there's no reason to redo this on toggle.
   useEffect(() => {
     const interval = setInterval(() => setTime(getTime()), 1000);
 
-    function getHijriDate(lang : "ar" | "en") {
-      try {
-        return new Intl.DateTimeFormat(
-          lang === "ar" ? "ar-SA-u-ca-islamic" : "en-u-ca-islamic",
-          { day: "numeric", month: "long", year: "numeric" }
-        ).format(new Date());
-      } catch {
-        return "";
-      }
-    }
-
-    function getMiladiDate() {
-      return new Date().toLocaleDateString("en-GB", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      });
-    }
-
-    function getTime() {
-      return new Date().toLocaleTimeString("en-GB", {
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-      });
-    }
-
-    setHijriDate(getHijriDate(lang));
     setmiladiDate(getMiladiDate());
     setTime(getTime());
+
     return () => clearInterval(interval);
+  }, []);
+
+  // Runs on mount AND every time `lang` changes — the Hijri date's
+  // wording depends on language, so it needs to redo its work then.
+  useEffect(() => {
+    setHijriDate(getHijriDate(lang));
   }, [lang]);
 
   return (
