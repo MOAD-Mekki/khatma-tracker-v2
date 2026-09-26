@@ -44,6 +44,14 @@ export function LanguageProvider({ children }: LangProp) {
     return () => subscription.unsubscribe();
   }, [supabase]);
 
+  // Keep a "lang" cookie in sync with whatever language is currently
+  // active, so the server (layout.tsx) can read it on the next page
+  // load and set <html lang dir> correctly before any client-side
+  // JavaScript runs.
+  useEffect(() => {
+    document.cookie = `lang=${lang}; path=/; max-age=31536000`;
+  }, [lang]);
+
   const toggle = async () => {
     const newLang = lang === "ar" ? "en" : "ar";
     setLang(newLang);
