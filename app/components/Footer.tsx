@@ -27,7 +27,7 @@ const footerTranslations = {
 };
 
 export default function Footer() {
-  const supabase = createClient();
+  const [supabase] = useState(() => createClient());
   const { lang } = useLang();
   const t = footerTranslations[lang];
   const isAr = lang === "ar";
@@ -53,53 +53,46 @@ export default function Footer() {
       dir={isAr ? "rtl" : "ltr"}
       className="font-arabic w-full bg-white border-t border-teal-100 mt-10 px-6 py-8 flex flex-col items-center gap-5"
     >
-        {/* {Ayah} */}
       <div className="text-center max-w-lg">
         <p dir="rtl" className="text-xl text-teal-700 leading-loose">﴿ وَرَتِّلِ الْقُرْآنَ تَرْتِيلًا ﴾</p>
         <p className="font-sans text-xs text-gray-400 mt-1">{t.ayahRef}</p>
       </div>
-
-
-        {/* {Links} */}
+  
       <div className="flex flex-wrap justify-center items-center gap-4">
-        {/* Bug Report */}
-        <a
+        <button
+          type="button"
           onClick={handleEmail}
-          target="_blank"
-          rel="noreferrer"
           className="flex items-center gap-1.5 text-sm text-teal-600 hover:text-teal-800 hover:cursor-pointer transition-colors"
         >
-            {t.bugReport}
-        </a>
+          {t.bugReport}
+        </button>
         <span className="w-1 h-1 rounded-full bg-gray-300" />
-        {/* Contact Card */}
-        <a
+        <button
+          type="button"
           onClick={() => setContact(true)}
-          target="_blank"
-          rel="noreferrer"
           className="flex items-center gap-1.5 text-sm text-teal-600 hover:text-teal-800 hover:cursor-pointer transition-colors"
         >
-            {t.contact}
-        </a>
+          {t.contact}
+        </button>
         <span className="w-1 h-1 rounded-full bg-gray-300" />
-        {/* Sign Out */}
-        <a 
+        <button
+          type="button"
           onClick={handleSignOut}
-          className="flex items-center gap-1.5 text-sm text-red-600 hover:text-red-800 hover:cursor-pointer transition-colors">
-            {t.signout}
-        </a>
+          className="flex items-center gap-1.5 text-sm text-red-600 hover:text-red-800 hover:cursor-pointer transition-colors"
+        >
+          {t.signout}
+        </button>
       </div>
-
-        {/* {Bottom text} */}
+  
       <div className="border-t border-teal-50 pt-4 w-full flex flex-col items-center gap-1">
         <p className="font-sans text-sm text-gray-400">{t.madeWith}</p>
         <p className="font-sans text-xs text-gray-300">{t.rights}</p>
       </div>
-
-    {contact && (
-        <Contact          
+  
+      {contact && (
+        <Contact
           lang={lang}
-          onClose={() => setContact(false)}/>
+          onClose={() => setContact(false)} />
       )}
     </footer>
   );
